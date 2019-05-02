@@ -1,0 +1,120 @@
+package com.example.selfchat3_1;
+
+import android.content.SharedPreferences;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+
+import java.util.ArrayList;
+
+public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
+
+    public ArrayList<String> data;
+    private MessageOnClickListener itemListener;
+    public DataManager dataManager;
+    private SharedPreferences sp;
+    private SharedPreferences.Editor sp_editor;
+
+    public interface MessageOnClickListener
+    {
+        public void recItemOnClickListener(View view, int messageID);
+    }
+
+    public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
+
+        private TextView name;
+        public int messageID;
+
+        public MyViewHolder(final View itemView, int messageID) {
+            super(itemView);
+            this.messageID = messageID;
+            name = ((TextView) itemView.findViewById(R.id.textView_one_message_template));
+            itemView.setOnClickListener(this);
+//            itemView.sClickListener(this);
+        }
+
+        public void display(String message) {
+            name.setText(message);
+        }
+
+        public void onClick(View v)
+        {
+            itemListener.recItemOnClickListener(v, messageID);
+        }
+    }
+
+    public MyAdapter(MessageOnClickListener itemListener,
+                     SharedPreferences sp, SharedPreferences.Editor sp_editor)
+    {
+        this.data = new ArrayList<String>();
+        this.itemListener = itemListener;
+        this.sp = sp;
+        this.sp_editor = sp_editor;
+        this.dataManager = new DataManager(sp, sp_editor);
+    }
+
+    @Override
+    public int getItemCount() {
+        return data.size();
+    }
+
+    @Override
+    public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+        View view = inflater.inflate(R.layout.view_one_message, parent, false);
+        dataManager.local_counter++;
+        Log.e("1", "onCreateViewHolder: restore", null);
+        return new MyViewHolder(view, this.dataManager.local_counter);
+    }
+
+    @Override
+    public void onBindViewHolder(MyViewHolder holder, int position) {
+        holder.display(data.get(position));
+    }
+
+    public void addItem(String item, boolean automatic) {
+        this.data.add(item);
+        if(!automatic) {
+            sp_editor.putString(dataManager.getDataSize() + "", item);
+            sp_editor.apply();
+            sp_editor.putInt(MainActivity.SP_KEY_FOR_DATA_COUNTER, dataManager.getDataSize() + 1);
+            sp_editor.apply();
+        }
+        notifyDataSetChanged();
+    }
+
+    public void getStoredMessages(int size)
+    {
+        String dataToAdd;
+        for(int index = 0; index <= size + 1; index++)
+        {
+            dataToAdd = sp.getString(index + "", null);
+            if(dataToAdd != null) {
+                addItem(dataToAdd, true);
+            }
+        }
+    }
+
+    public void deleteMessageById(int position)
+    {
+        int removeIn = position - 1 ;
+        this.data.remove(removeIn);
+//        this.data.set(removeIn, "");
+        sp_editor.remove(removeIn + "");
+        sp_editor.apply();
+        sp_editor.putInt(MainActivity.SP_KEY_FOR_DATA_COUNTER, dataManager.getDataSize() - 1);
+        sp_editor.apply();
+        this.dataManager.updateDataId(this.dataManager.getDataSize());
+        dataManager.local_counter--;
+        notifyDataSetChanged();
+
+    }
+
+    public void supportConfigurationChange()
+    {
+        notifyDataSetChanged();
+    }
+}

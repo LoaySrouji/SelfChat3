@@ -1,0 +1,45 @@
+package com.example.selfchat3_1;
+
+import android.content.SharedPreferences;
+
+public class DataManager {
+    public int local_counter;
+    private SharedPreferences sp;
+    private SharedPreferences.Editor sp_editor;
+
+    public DataManager(SharedPreferences sp, SharedPreferences.Editor sp_editor)
+    {
+        this.local_counter = 0;
+        this.sp = sp;
+        this.sp_editor = sp_editor;
+    }
+
+    public int generateNewId()
+    {
+        return sp.getInt(MainActivity.SP_KEY_FOR_DATA_COUNTER, 0) + 1;
+    }
+
+    public void updateDataId(int dataSize)
+    {
+        int index = 0, tagging_counter = 0;
+        String message;
+        while (index <= dataSize)
+        {
+            message = sp.getString(index + "", null);
+            if(message != null) {
+                sp_editor.remove(index + "");
+                sp_editor.apply();
+                sp_editor.putString(tagging_counter + "", message);
+                sp_editor.apply();
+                tagging_counter++;
+            }
+            index++;
+        }
+    }
+
+    public int getDataSize()
+    {
+        return sp.getInt(MainActivity.SP_KEY_FOR_DATA_COUNTER, 0);
+    }
+}
+
