@@ -4,14 +4,25 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements MyAdapter.recItemOnLongClick {
     public static final String SP_DATA_SIZE_KEY = "data_size";
@@ -26,6 +37,9 @@ public class MainActivity extends AppCompatActivity implements MyAdapter.recItem
     SharedPreferences sp;
     SharedPreferences.Editor editor;
 
+
+    FirebaseFirestore db;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,6 +48,10 @@ public class MainActivity extends AppCompatActivity implements MyAdapter.recItem
         button = (Button) findViewById(R.id.button3);
         editText = (EditText) findViewById(R.id.editText2);
         recyclerView = (RecyclerView) findViewById(R.id.rec1);
+
+        FirebaseApp.initializeApp(MainActivity.this);
+
+        db = FirebaseFirestore.getInstance();
 
         sp = PreferenceManager.getDefaultSharedPreferences(this);
         editor = sp.edit();
@@ -61,6 +79,26 @@ public class MainActivity extends AppCompatActivity implements MyAdapter.recItem
                     return;
                 }
                 myAdapter.add_message(message);
+                Map<String, Object> user = new HashMap<>();
+                user.put("content", message);
+                user.put("timestamp", "5:30");
+                user.put("id", "12");
+
+                // Add a new document with a generated ID
+                db.collection("messages")
+                        .add(user)
+                        .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                            @Override
+                            public void onSuccess(DocumentReference documentReference) {
+                                Log.e("a", "DocumentSnapshot added with ID: " + documentReference.getId());
+                            }
+                        })
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Log.e("b", "Error adding document", e);
+                            }
+                        });
             }
         });
     }
